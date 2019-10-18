@@ -1,0 +1,132 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Stack to create 2 security roles in target accounts for security functions",
+  "Parameters": {
+    "AllowCrossAccountRoleFromAccountId": {
+      "Type": "String",
+      "Default": "",
+      "Description": "16 digit Account ID of account to allow access from"
+    }
+  },
+  "Resources": {
+    "CrossAccountSecurityReadRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "security-readonly-role",
+        "MaxSessionDuration": 18000,
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": "sts:AssumeRole",
+              "Principal": {
+                "AWS": [
+                  null
+                ]
+              },
+              "Condition": {
+                "Bool": {
+                  "aws:MultiFactorAuthPresent": true
+                }
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/ReadOnlyAccess",
+          "arn:aws:iam::aws:policy/SecurityAudit"
+        ],
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "security-readonly-delegate",
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "trustedadvisor:RefreshCheck",
+                    "trustedadvisor:ExcludeCheckItems",
+                    "trustedadvisor:IncludeCheckItems",
+                    "trustedadvisor:UpdateNotificationPreferences",
+                    "sns:*",
+                    "ses:*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "RootInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "CrossAccountSecurityReadRole"
+          }
+        ]
+      }
+    },
+    "CrossAccountSecurityForensicsRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "security-forensics-role",
+        "MaxSessionDuration": 18000,
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": "sts:AssumeRole",
+              "Principal": {
+                "AWS": [
+                  null
+                ]
+              },
+              "Condition": {
+                "Bool": {
+                  "aws:MultiFactorAuthPresent": true
+                }
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/ReadOnlyAccess",
+          "arn:aws:iam::aws:policy/SecurityAudit"
+        ],
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "security-forensics-delegate",
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "trustedadvisor:RefreshCheck",
+                    "trustedadvisor:ExcludeCheckItems",
+                    "trustedadvisor:IncludeCheckItems",
+                    "trustedadvisor:UpdateNotificationPreferences",
+                    "sns:*",
+                    "ses:*",
+                    "ec2:CopySnapshot",
+                    "ec2:CreateSnapshot",
+                    "ec2:CreateKeyPair",
+                    "ec2:ImportSnapshot",
+                    "ec2:CreateVolume",
+                    "ec2:ModifySnapshotAttribute"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

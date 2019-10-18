@@ -1,0 +1,54 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Stack to create devops IAM role in target accounts for devops functions",
+  "Parameters": {
+    "AllowCrossAccountRoleFromAccountId": {
+      "Type": "String",
+      "Default": "",
+      "Description": "16 digit Account ID of account to allow access from"
+    }
+  },
+  "Resources": {
+    "CrossAccountDevOpsRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "devops-role",
+        "MaxSessionDuration": 18000,
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": "sts:AssumeRole",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:aws:iam::${AllowCrossAccountRoleFromAccountId}:root"
+                }
+              },
+              "Condition": {
+                "Bool": {
+                  "aws:MultiFactorAuthPresent": true
+                }
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/job-function/SystemAdministrator",
+          "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
+        ],
+        "Path": "/"
+      }
+    },
+    "RootInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "CrossAccountDevOpsRole"
+          }
+        ]
+      }
+    }
+  }
+}

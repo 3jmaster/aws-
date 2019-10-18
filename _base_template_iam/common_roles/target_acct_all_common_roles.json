@@ -1,0 +1,112 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Stack to create basic IAM roles in target accounts for common functions",
+  "Parameters": {
+    "AllowCrossAccountRoleFromAccountId": {
+      "Type": "String",
+      "Default": "",
+      "Description": "16 digit Account ID of account to allow access from"
+    }
+  },
+  "Resources": {
+    "CrossAccountAdminRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "admin-role",
+        "MaxSessionDuration": 18000,
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": "sts:AssumeRole",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:aws:iam::${AllowCrossAccountRoleFromAccountId}:root"
+                }
+              },
+              "Condition": {
+                "Bool": {
+                  "aws:MultiFactorAuthPresent": true
+                }
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "Path": "/"
+      }
+    },
+    "RootInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "CrossAccountAdminRole"
+          }
+        ]
+      }
+    },
+    "CrossAccountDevOpsRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "devops-role",
+        "MaxSessionDuration": 18000,
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": "sts:AssumeRole",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:aws:iam::${AllowCrossAccountRoleFromAccountId}:root"
+                }
+              },
+              "Condition": {
+                "Bool": {
+                  "aws:MultiFactorAuthPresent": true
+                }
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/job-function/SystemAdministrator",
+          "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
+        ],
+        "Path": "/"
+      }
+    },
+    "CrossAccountReadonlyRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "readonly-role",
+        "MaxSessionDuration": 18000,
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": "sts:AssumeRole",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:aws:iam::${AllowCrossAccountRoleFromAccountId}:root"
+                }
+              },
+              "Condition": {
+                "Bool": {
+                  "aws:MultiFactorAuthPresent": true
+                }
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/ReadOnlyAccess"
+        ],
+        "Path": "/"
+      }
+    }
+  }
+}
